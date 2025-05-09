@@ -466,11 +466,6 @@ const beforeUpload = async (data: any) => {
     window.$message.warning('视频大小不能超过100MB');
     return false;
   }
-  // 附件类型校验
-  if (uploadType.value === 'attachment' && !(await isZipFile(data.file.file))) {
-    window.$message.warning('附件仅允许 zip 格式');
-    return false;
-  }
 
   if (uploadType.value === 'attachment' && data.file.file?.size > 104857600) {
     window.$message.warning('附件大小不能超过100MB');
