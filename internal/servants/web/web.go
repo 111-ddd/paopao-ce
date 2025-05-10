@@ -5,6 +5,10 @@
 package web
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/alimy/tryst/cfg"
@@ -26,6 +30,28 @@ var (
 	_oss                  core.ObjectStorageService
 	_onceInitial          sync.Once
 )
+
+// findProjectRoot finds the project root by searching for go.mod
+func findProjectRoot() (string, error) {
+	_, b, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", fmt.Errorf("cannot get caller information")
+	}
+	basepath := filepath.Dir(b)
+
+	// Search upwards for go.mod
+	for {
+		goModPath := filepath.Join(basepath, "go.mod")
+		if _, err := os.Stat(goModPath); err == nil {
+			return basepath, nil
+		}
+		parent := filepath.Dir(basepath)
+		if parent == basepath {
+			return "", fmt.Errorf("go.mod not found")
+		}
+		basepath = parent
+	}
+}
 
 // RouteWeb register web route
 func RouteWeb(e *gin.Engine) {
@@ -50,6 +76,20 @@ func RouteWeb(e *gin.Engine) {
 	})
 	// shedule jobs if need
 	scheduleJobs()
+
+	// Add static file serving and SPA fallback
+	projectRoot, err := findProjectRoot()
+	if err != nil {
+		// Handle error appropriately, maybe log and exit or use a default path
+		panic(fmt.Sprintf("Failed to find project root: %v", err))
+	}
+	staticFilesPath := filepath.Join(projectRoot, "web", "dist")
+
+	e.Static("/", staticFilesPath)
+	e.NoRoute(func(c *gin.Context) {
+		indexPath := filepath.Join(staticFilesPath, "index.html")
+		c.File(indexPath)
+	})
 }
 
 // lazyInitial do some package lazy initialize for performance
