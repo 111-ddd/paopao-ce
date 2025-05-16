@@ -43,6 +43,10 @@ func getFileExt(s string) (string, mir.Error) {
 		"application/octet-stream",
 		"application/x-zip-compressed":
 		return ".zip", nil
+	case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+		return ".docx", nil
+	case "application/msword":
+		return ".doc", nil
 	default:
 		return "", ErrFileInvalidExt.WithDetails("仅允许 webp/png/jpg/gif/mp4/mov/zip 类型")
 	}
